@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+// In production, the API is served from the same origin
+// In development, it's proxied through Vite to localhost:8000
+const API_BASE = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1');
 
 const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: API_BASE ? `${API_BASE}/api/v1` : '/api/v1',
   headers: { 'Content-Type': 'application/json' },
 });
 

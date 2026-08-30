@@ -16,90 +16,114 @@ A full-stack AI-powered tool that helps job seekers apply to more roles faster a
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | FastAPI (Python 3.12) |
+| Backend | FastAPI (Python 3.12) + Gunicorn |
 | Frontend | React + Vite |
 | Database | PostgreSQL + pgvector |
-| Vector Store | pgvector (on same Postgres) |
 | Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
 | LLM | Claude / OpenAI API |
 | Auth | JWT |
-| Deploy | Docker Compose |
+| Deploy | Docker, Render (or any Docker host) |
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local Development)
 
 ### Prerequisites
 - Python 3.12+
 - Node.js 20+
 - PostgreSQL 16+ (or use Docker)
 
-### 1. Clone & configure
 ```bash
+# 1. Clone & configure
+git clone https://github.com/UmangBandil/AI-Job-Application-Copilot-.git
+cd AI-Job-Application-Copilot-
 cp .env.example .env
 # Edit .env with your API keys (at least one LLM key)
-```
 
-### 2. Start database (Docker)
-```bash
-docker run -d --name pgvector -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=jobcopilot pgvector/pgvector:pg16
-```
+# 2. Start database
+docker run -d --name pgvector -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=jobcopilot \
+  pgvector/pgvector:pg16
 
-### 3. Start backend
-```bash
+# 3. Start backend
 cd backend
 python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
-```
 
-### 4. Start frontend
-```bash
+# 4. Start frontend (new terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-### 5. Open
-- Frontend: http://localhost:5173
-- API docs: http://localhost:8000/docs
+- **Frontend:** http://localhost:5173
+- **API docs:** http://localhost:8000/docs
 
-### Docker Compose (all-in-one)
+## 🌐 Deploy to Render (Free)
+
+### One-Click Deploy
+
+1. **Push to GitHub** (already done)
+2. Go to [Render Dashboard](https://dashboard.render.com)
+3. Click **New → Blueprint**
+4. Connect your GitHub repo
+5. Render detects `render.yaml` and provisions:
+   - A **Web Service** (backend + bundled frontend)
+   - A **PostgreSQL database** (free tier)
+6. In the service **Environment** tab, set:
+   - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (at least one)
+   - `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` (optional, for job search)
+7. Click **Deploy**
+
+Your app will be live at `https://job-copilot.onrender.com` (or similar).
+
+### Manual Deploy (without Blueprint)
+
 ```bash
-docker compose up --build
+# Build and run locally with production settings
+docker compose -f docker-compose.production.yml up --build -d
+
+# Access at http://localhost:8000
 ```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Auto (Render) | PostgreSQL async connection string |
+| `DATABASE_URL_SYNC` | Auto (Render) | PostgreSQL sync connection string |
+| `SECRET_KEY` | Auto (Render) | JWT signing secret (auto-generated) |
+| `ANTHROPIC_API_KEY` | One LLM key | Claude API key |
+| `OPENAI_API_KEY` | One LLM key | OpenAI API key |
+| `ADZUNA_APP_ID` | Optional | Adzuna API credentials |
+| `ADZUNA_APP_KEY` | Optional | Adzuna API credentials |
+| `DEBUG` | No | Set to `false` in production |
 
 ## 📁 Project Structure
 
 ```
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # API route handlers
+│   │   ├── api/          # 7 API route modules (18 endpoints)
 │   │   ├── core/         # Config, DB, auth, dependencies
-│   │   ├── models/       # SQLAlchemy ORM models
+│   │   ├── models/       # 7 SQLAlchemy ORM models
 │   │   ├── schemas/      # Pydantic request/response schemas
 │   │   └── services/     # Business logic (parsing, RAG, LLM, search)
-│   ├── alembic/          # Database migrations
+│   ├── Dockerfile                # Development Dockerfile
+│   ├── Dockerfile.production     # Production (multi-stage, bundled frontend)
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
 │   │   ├── components/   # Shared UI components
 │   │   ├── contexts/     # React contexts (auth)
-│   │   ├── pages/        # Page components
+│   │   ├── pages/        # 6 page components
 │   │   └── services/     # API client
 │   └── package.json
-└── docker-compose.yml
+├── docker-compose.yml                # Development
+├── docker-compose.production.yml     # Production (single service)
+├── render.yaml                       # Render Blueprint (one-click deploy)
+└── .env.example
 ```
-
-## 🔑 Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL async connection string |
-| `SECRET_KEY` | Yes | JWT signing secret |
-| `ANTHROPIC_API_KEY` | One LLM key | Claude API key |
-| `OPENAI_API_KEY` | One LLM key | OpenAI API key |
-| `ADZUNA_APP_ID` | Optional | Adzuna API credentials |
-| `ADZUNA_APP_KEY` | Optional | Adzuna API credentials |
 
 ## 📋 API Endpoints
 
@@ -107,14 +131,21 @@ docker compose up --build
 |--------|----------|-------------|
 | POST | `/api/v1/auth/register` | Register new user |
 | POST | `/api/v1/auth/login` | Login |
+| GET | `/api/v1/auth/me` | Current user |
 | POST | `/api/v1/resumes` | Upload resume |
 | GET | `/api/v1/resumes` | List resumes |
+| DELETE | `/api/v1/resumes/:id` | Delete resume |
 | POST | `/api/v1/job-descriptions` | Create JD |
+| GET | `/api/v1/job-descriptions` | List JDs |
 | POST | `/api/v1/job-descriptions/match` | Match resume to JD |
-| POST | `/api/v1/generate` | Generate content (RAG) |
-| GET/POST | `/api/v1/applications` | CRUD applications |
+| POST | `/api/v1/generate` | RAG content generation |
+| POST | `/api/v1/applications` | Create application |
+| GET | `/api/v1/applications` | List applications |
+| PATCH | `/api/v1/applications/:id` | Update application |
+| DELETE | `/api/v1/applications/:id` | Delete application |
 | POST | `/api/v1/job-search` | Search job boards |
 | GET | `/api/v1/dashboard/stats` | Dashboard analytics |
+| GET | `/api/v1/health` | Health check |
 
 ---
 

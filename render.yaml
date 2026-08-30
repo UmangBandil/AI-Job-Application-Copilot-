@@ -1,0 +1,48 @@
+# Render Blueprint — AI Job Application Copilot
+# One-click deploy: https://render.com/deploy
+#
+# Prerequisites:
+#   1. Create a Render account (free tier works)
+#   2. Connect your GitHub repo
+#   3. Click "New" → "Blueprint" → select this repo
+#   4. Set environment variables in the Render dashboard
+#   5. Render will build and deploy automatically
+
+services:
+  # ── Backend + Frontend (single service) ──────────────────────────
+  - type: web
+    name: job-copilot
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.production
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jobcopilot-db
+          property: connectionString
+      - key: DATABASE_URL_SYNC
+        fromDatabase:
+          name: jobcopilot-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Set manually in dashboard
+      - key: OPENAI_API_KEY
+        sync: false  # Set manually in dashboard
+      - key: ADZUNA_APP_ID
+        sync: false  # Optional
+      - key: ADZUNA_APP_KEY
+        sync: false  # Optional
+      - key: DEBUG
+        value: "false"
+      - key: CORS_ORIGINS
+        value: '["*"]'
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+
+  # ── PostgreSQL Database ──────────────────────────────────────────
+  - type: pgsql
+    name: jobcopilot-db
+    plan: free
+    database: jobcopilot
+    ipAllowList: []  # Only accessible from Render private network
