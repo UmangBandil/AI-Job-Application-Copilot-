@@ -35,8 +35,6 @@ app = FastAPI(
 
 # CORS
 origins = list(settings.CORS_ORIGINS)
-if IS_PRODUCTION:
-    origins.append("*")
 
 app.add_middleware(
     CORSMiddleware,

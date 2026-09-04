@@ -54,10 +54,13 @@ async def get_dashboard_stats(
     )
     average_match_score = round(float(avg_result.scalar() or 0), 1)
 
-    # Response rate (interviews / applied)
-    applied = applications_by_status.get("applied", 0) + applications_by_status.get("interview", 0) + applications_by_status.get("offer", 0)
+    # Response rate (interviews / total submitted, i.e. excluding 'saved')
+    submitted = (applications_by_status.get("applied", 0)
+                 + applications_by_status.get("interview", 0)
+                 + applications_by_status.get("offer", 0)
+                 + applications_by_status.get("rejected", 0))
     interviews = applications_by_status.get("interview", 0) + applications_by_status.get("offer", 0)
-    response_rate = round((interviews / applied * 100) if applied > 0 else 0, 1)
+    response_rate = round((interviews / submitted * 100) if submitted > 0 else 0, 1)
 
     # Skill gap trends across all JDs
     jd_result = await db.execute(
@@ -65,14 +68,16 @@ async def get_dashboard_stats(
     )
     all_must_have: dict[str, int] = {}
     all_nice_have: dict[str, int] = {}
+    total_jds = 0
     for (parsed_data,) in jd_result.all():
+        total_jds += 1
         if parsed_data:
             for skill in parsed_data.get("must_have_skills", []):
                 all_must_have[skill] = all_must_have.get(skill, 0) + 1
             for skill in parsed_data.get("nice_to_have_skills", []):
                 all_nice_have[skill] = all_nice_have.get(skill, 0) + 1
 
-    total_jds = max(len(list(jd_result.all())) or 1, 1)
+    total_jds = max(total_jds, 1)
 
     # Find skills that appear frequently in JDs
     skill_gap_trends = []

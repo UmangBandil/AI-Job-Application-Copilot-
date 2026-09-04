@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models import Application, JobDescription, User
+from app.models import Application, JobDescription, Resume, User
 from app.schemas.schemas import ApplicationCreate, ApplicationResponse, ApplicationUpdate
 
 router = APIRouter(prefix="/applications", tags=["applications"])
@@ -47,6 +47,16 @@ async def create_application(
     jd = jd_result.scalar_one_or_none()
     if not jd:
         raise HTTPException(status_code=404, detail="Job description not found")
+
+    # Verify resume ownership
+    resume_result = await db.execute(
+        select(Resume).where(
+            Resume.id == payload.resume_id,
+            Resume.user_id == user.id,
+        )
+    )
+    if not resume_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Resume not found")
 
     app = Application(
         user_id=user.id,

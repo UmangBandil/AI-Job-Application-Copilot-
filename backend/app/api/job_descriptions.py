@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models import JobDescription, User
+from app.models import JobDescription, Resume, User
 from app.schemas.schemas import JDCreate, JDResponse, MatchRequest, MatchScoreResponse
 from app.services.jd_service import parse_jd, fetch_jd_from_url
 from app.services.matching_service import compute_match_score
@@ -135,7 +135,7 @@ async def match_jd_to_resume(
     db: AsyncSession = Depends(get_db),
 ):
     """Compute match score between a resume and a job description."""
-    # Verify ownership
+    # Verify JD ownership
     jd_result = await db.execute(
         select(JobDescription).where(
             JobDescription.id == payload.job_description_id,
@@ -144,6 +144,16 @@ async def match_jd_to_resume(
     )
     if not jd_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Job description not found")
+
+    # Verify resume ownership
+    resume_result = await db.execute(
+        select(Resume).where(
+            Resume.id == payload.resume_id,
+            Resume.user_id == user.id,
+        )
+    )
+    if not resume_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Resume not found")
 
     try:
         scores = await compute_match_score(
