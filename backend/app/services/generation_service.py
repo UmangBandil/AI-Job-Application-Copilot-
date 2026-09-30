@@ -1,58 +1,21 @@
 """RAG-grounded content generation with citation enforcement."""
 
-import json
 import re
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.ai.providers import get_llm_provider
 from app.models import JobDescription, Resume, ResumeChunk
 from app.services.matching_service import cosine_similarity
 from app.services.resume_service import embed_query
 
-settings = get_settings()
-
-# ── LLM client abstraction ────────────────────────────────────────────
+# ── LLM access (provider abstraction) ─────────────────────────────────
 
 async def _call_llm(prompt: str, system: str = "", max_tokens: int = 2000) -> str:
-    """Call the best available LLM (Anthropic first, then OpenAI)."""
-    if settings.ANTHROPIC_API_KEY:
-        return await _call_anthropic(prompt, system, max_tokens)
-    elif settings.OPENAI_API_KEY:
-        return await _call_openai(prompt, system, max_tokens)
-    else:
-        raise RuntimeError("No LLM API key configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.")
-
-
-async def _call_anthropic(prompt: str, system: str, max_tokens: int) -> str:
-    import anthropic
-
-    client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-    message = await client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return message.content[0].text
-
-
-async def _call_openai(prompt: str, system: str, max_tokens: int) -> str:
-    from openai import AsyncOpenAI
-
-    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-    messages = []
-    if system:
-        messages.append({"role": "system", "content": system})
-    messages.append({"role": "user", "content": prompt})
-
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        max_tokens=max_tokens,
-    )
-    return response.choices[0].message.content
+    """Call the configured LLM provider (Ollama local by default, or cloud key)."""
+    provider = get_llm_provider()
+    return await provider.generate(prompt, system=system, max_tokens=max_tokens)
 
 
 # ── Retrieval ────────────────────────────────────────────────────────

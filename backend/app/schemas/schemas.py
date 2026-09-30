@@ -169,6 +169,38 @@ class JobSearchResultResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ── AI ────────────────────────────────────────────────────────────────
+class AIHealthResponse(BaseModel):
+    configured: bool
+    provider: str
+    model: str | None = None
+    connected: bool
+    detail: dict = {}
+
+
+class AIChatRequest(BaseModel):
+    prompt: str
+    system: str = ""
+    max_tokens: int = 2000
+
+
+class AIChatResponse(BaseModel):
+    content: str
+    provider: str
+
+
+class AIGenerateJSONRequest(BaseModel):
+    prompt: str
+    system: str = ""
+    max_tokens: int = 2000
+    required_keys: list[str] = []
+
+
+class AIGenerateJSONResponse(BaseModel):
+    data: dict
+    provider: str
+
+
 # ── Dashboard ──────────────────────────────────────────────────────────
 class DashboardStats(BaseModel):
     total_applications: int

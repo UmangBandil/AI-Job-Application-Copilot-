@@ -133,14 +133,49 @@ def parse_jd(raw_text: str) -> dict:
     }
 
 
+MAX_FETCH_BYTES = 5 * 1024 * 1024  # 5 MB cap on fetched JD pages
+MAX_REDIRECTS = 5
+
+
 async def fetch_jd_from_url(url: str) -> str:
-    """Fetch job description text from a URL."""
+    """Fetch job description text from a public URL (SSRF-guarded).
+
+    Every hop — the initial URL and each redirect target — is validated
+    against the public-host allow rules in url_guard; redirects are followed
+    manually so a public URL cannot bounce the fetcher at internal addresses.
+    """
     import httpx
     from bs4 import BeautifulSoup
 
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-        resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 JobCopilot/1.0"})
+    from app.services.url_guard import validate_public_http_url
+
+    current_url = validate_public_http_url(url)
+
+    async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
+        for _ in range(MAX_REDIRECTS + 1):
+            resp = await client.get(
+                current_url,
+                headers={"User-Agent": "Mozilla/5.0 JobCopilot/1.0"},
+            )
+            if not (resp.is_redirect and resp.has_redirect_location):
+                break
+            location = resp.headers.get("location", "")
+            if not location:
+                break
+            # Relative redirect targets resolve against the current URL.
+            from urllib.parse import urljoin
+
+            current_url = validate_public_http_url(urljoin(current_url, location))
+        else:
+            raise ValueError("Too many redirects")
+
         resp.raise_for_status()
+
+        if len(resp.content) > MAX_FETCH_BYTES:
+            raise ValueError(f"Fetched page too large (> {MAX_FETCH_BYTES // (1024 * 1024)} MB)")
+        content_type = resp.headers.get("content-type", "")
+        if content_type.startswith(("application/octet-stream", "image/", "video/", "audio/")):
+            raise ValueError("URL did not return a text page")
 
     soup = BeautifulSoup(resp.text, "html.parser")
 

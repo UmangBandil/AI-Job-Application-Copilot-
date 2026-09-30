@@ -18,6 +18,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
 
     # LLM
+    # LLM_PROVIDER: "ollama" (local, no key needed) | "openai" | "anthropic".
+    # Leave empty for legacy auto-detect (first configured cloud key wins).
+    LLM_PROVIDER: str = ""
+    LLM_TIMEOUT_SECONDS: float = 120.0
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "qwen3:8b"
+    OPENAI_MODEL: str = "gpt-4o"
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     ANTHROPIC_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
 
@@ -39,4 +47,10 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if not settings.DEBUG and settings.SECRET_KEY in ("", "change-me-in-production", "change-me-in-production-use-openssl-rand-hex-32"):
+        raise RuntimeError(
+            "SECRET_KEY must be set to a strong random value when DEBUG=false. "
+            "Generate one with: openssl rand -hex 32"
+        )
+    return settings

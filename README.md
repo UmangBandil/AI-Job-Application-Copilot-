@@ -4,6 +4,7 @@ A full-stack AI-powered tool that helps job seekers apply to more roles faster a
 
 ## ✨ Features
 
+- **Local LLM (Ollama)** — Run the AI fully locally via a provider abstraction (Ollama / OpenAI / Anthropic), with structured JSON generation and a health endpoint
 - **Resume RAG Corpus** — Upload resumes, parse into structured chunks, embed into vector store
 - **JD Ingestion** — Paste text or URLs, auto-parse into structured fields
 - **Match Scoring** — Compare JD requirements against resume using embedding similarity + keyword checks
@@ -20,7 +21,7 @@ A full-stack AI-powered tool that helps job seekers apply to more roles faster a
 | Frontend | React + Vite |
 | Database | PostgreSQL + pgvector |
 | Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
-| LLM | Claude / OpenAI API |
+| LLM | Ollama (local) or Claude / OpenAI API |
 | Auth | JWT |
 | Deploy | Docker, Render (or any Docker host) |
 
@@ -36,7 +37,7 @@ A full-stack AI-powered tool that helps job seekers apply to more roles faster a
 git clone https://github.com/UmangBandil/AI-Job-Application-Copilot-.git
 cd AI-Job-Application-Copilot-
 cp .env.example .env
-# Edit .env with your API keys (at least one LLM key)
+# Edit .env — set LLM_PROVIDER=ollama (local, no key needed) or add a cloud API key
 
 # 2. Start database
 docker run -d --name pgvector -p 5432:5432 \
@@ -58,6 +59,32 @@ npm run dev
 
 - **Frontend:** http://localhost:5173
 - **API docs:** http://localhost:8000/docs
+
+### Local AI (Ollama)
+
+The backend runs fully locally — no cloud API key required:
+
+```powershell
+# Install Ollama: https://ollama.com/download
+ollama pull qwen3:8b
+```
+
+Then in `.env`:
+
+```env
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen3:8b
+```
+
+`GET /api/v1/ai/health` reports whether the local model is connected and available. If Ollama is offline, AI endpoints return a clear 503 with instructions.
+
+## 🧪 Testing
+
+```bash
+cd backend
+python -m pytest -q   # 56 tests — no Ollama or database required (LLM and network mocked)
+```
 
 ## 🌐 Deploy to Render (Free)
 
@@ -93,6 +120,9 @@ docker compose -f docker-compose.production.yml up --build -d
 | `DATABASE_URL` | Auto (Render) | PostgreSQL async connection string |
 | `DATABASE_URL_SYNC` | Auto (Render) | PostgreSQL sync connection string |
 | `SECRET_KEY` | Auto (Render) | JWT signing secret (auto-generated) |
+| `LLM_PROVIDER` | One LLM source | `ollama` (local, no key), `openai`, `anthropic`, or empty for auto-detect |
+| `OLLAMA_BASE_URL` | With ollama | Local Ollama API URL |
+| `OLLAMA_MODEL` | With ollama | Local model tag (e.g. `qwen3:8b`) |
 | `ANTHROPIC_API_KEY` | One LLM key | Claude API key |
 | `OPENAI_API_KEY` | One LLM key | OpenAI API key |
 | `ADZUNA_APP_ID` | Optional | Adzuna API credentials |
@@ -104,7 +134,8 @@ docker compose -f docker-compose.production.yml up --build -d
 ```
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # 7 API route modules (18 endpoints)
+│   │   ├── ai/           # LLM provider abstraction (Ollama / OpenAI / Anthropic)
+│   │   ├── api/          # 8 API route modules
 │   │   ├── core/         # Config, DB, auth, dependencies
 │   │   ├── models/       # 7 SQLAlchemy ORM models
 │   │   ├── schemas/      # Pydantic request/response schemas
@@ -129,6 +160,9 @@ docker compose -f docker-compose.production.yml up --build -d
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/api/v1/ai/health` | LLM provider status |
+| POST | `/api/v1/ai/chat` | Chat with configured LLM |
+| POST | `/api/v1/ai/generate-json` | Structured JSON generation |
 | POST | `/api/v1/auth/register` | Register new user |
 | POST | `/api/v1/auth/login` | Login |
 | GET | `/api/v1/auth/me` | Current user |
@@ -146,6 +180,14 @@ docker compose -f docker-compose.production.yml up --build -d
 | POST | `/api/v1/job-search` | Search job boards |
 | GET | `/api/v1/dashboard/stats` | Dashboard analytics |
 | GET | `/api/v1/health` | Health check |
+
+## 🗺️ Status
+
+**IMPLEMENTED:** auth · resume RAG · JD parsing · match scoring · cited content generation · application tracker · job search · dashboard · Docker/Render deploy · LLM provider abstraction with local Ollama + AI endpoints (health / chat / generate-json) · SSRF-hardened JD fetching · backend test suite
+
+**PARTIAL:** vector search (embeddings stored as float arrays; pgvector column + index pending) · Alembic (scaffolded, baseline revision pending) · job-search deduplication
+
+**PLANNED:** candidate profile · application question memory · Chrome extension (MV3) · answer engine with anti-hallucination field policies · ATS adapters · multi-page application agent · human-review UI · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
 
 ---
 
