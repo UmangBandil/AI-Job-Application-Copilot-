@@ -163,6 +163,9 @@ docker compose -f docker-compose.production.yml up --build -d
 | GET | `/api/v1/ai/health` | LLM provider status |
 | POST | `/api/v1/ai/chat` | Chat with configured LLM |
 | POST | `/api/v1/ai/generate-json` | Structured JSON generation |
+| GET / PATCH | `/api/v1/profile` | Candidate profile (authoritative personal data) |
+| GET | `/api/v1/memory/search` | Semantic search over previous Q/A |
+| POST / GET | `/api/v1/memory/answers` | Save / list question memory |
 | POST | `/api/v1/auth/register` | Register new user |
 | POST | `/api/v1/auth/login` | Login |
 | GET | `/api/v1/auth/me` | Current user |
@@ -183,11 +186,11 @@ docker compose -f docker-compose.production.yml up --build -d
 
 ## 🗺️ Status
 
-**IMPLEMENTED:** auth · resume RAG · JD parsing · match scoring · cited content generation · application tracker · job search · dashboard · Docker/Render deploy · LLM provider abstraction with local Ollama + AI endpoints (health / chat / generate-json) · SSRF-hardened JD fetching · backend test suite
+**IMPLEMENTED:** auth · resume RAG · JD parsing · match scoring · cited content generation · application tracker · job search · dashboard · Docker/Render deploy · LLM provider abstraction with local Ollama + AI endpoints (health / chat / generate-json) · SSRF-hardened JD fetching · Alembic migrations (schema changes are migrations, startup auto-applies) · pgvector embeddings with HNSW cosine index · candidate profile (GET/PATCH /api/v1/profile) · application question memory with semantic retrieval (/api/v1/memory) · backend test suite
 
-**PARTIAL:** vector search (embeddings stored as float arrays; pgvector column + index pending) · Alembic (scaffolded, baseline revision pending) · job-search deduplication
+**PARTIAL:** in-DB vector search for resume chunks (column + index ready; matching still loads chunks in Python) · job-search deduplication
 
-**PLANNED:** candidate profile · application question memory · Chrome extension (MV3) · answer engine with anti-hallucination field policies · ATS adapters · multi-page application agent · human-review UI · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
+**PLANNED:** Chrome extension (MV3) · answer engine with anti-hallucination field policies · ATS adapters · multi-page application agent · human-review UI · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
 
 ---
 

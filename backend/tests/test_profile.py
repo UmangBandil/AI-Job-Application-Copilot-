@@ -216,12 +216,14 @@ def test_build_profile_context_includes_structured_data():
 
 # ── Migrations ────────────────────────────────────────────────────────
 
-def test_migration_chain_head_is_profiles():
+def test_migration_chain_includes_profiles_revision():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
 
-    heads = ScriptDirectory.from_config(Config("alembic.ini")).get_heads()
-    assert heads == ["0003_create_profiles"]
+    sd = ScriptDirectory.from_config(Config("alembic.ini"))
+    revisions = {r.revision for r in sd.walk_revisions()}
+    assert "0003_create_profiles" in revisions
+    assert len(sd.get_heads()) == 1  # single linear chain, no branches
 
 
 def test_profile_model_registered_on_metadata():
