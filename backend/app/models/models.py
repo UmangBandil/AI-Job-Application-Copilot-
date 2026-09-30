@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     Column,
@@ -62,8 +63,8 @@ class ResumeChunk(Base):
     chunk_text = Column(Text, nullable=False)
     chunk_type = Column(String(50), nullable=False)  # skill, experience, education, project, summary
     metadata_ = Column("metadata", JSONB, default=dict)
-    # pgvector column for embeddings — added via raw SQL in migration
-    embedding = Column(ARRAY(Float), nullable=True)
+    # pgvector column (384 dims for all-MiniLM-L6-v2); migrated from ARRAY(Float)
+    embedding = Column(Vector(384), nullable=True)
 
     resume = relationship("Resume", back_populates="chunks")
 
