@@ -32,6 +32,55 @@ class Token(BaseModel):
     user: UserResponse
 
 
+# ── Profile ──────────────────────────────────────────────────────────────
+class ProfileResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    full_name: str = ""
+    email: str = ""
+    phone: str = ""
+    location: str = ""
+    website: str = ""
+    linkedin_url: str = ""
+    github_url: str = ""
+    portfolio_url: str = ""
+    education: list[dict] = []
+    experience: list[dict] = []
+    skills: list[str] = []
+    projects: list[dict] = []
+    work_authorization: dict = {}
+    notice_period: str = ""
+    salary_expectation: str = ""
+    willing_to_relocate: bool | None = None
+    preferred_locations: list[str] = []
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ProfileUpdate(BaseModel):
+    """PATCH body — fields left unset remain unchanged."""
+
+    full_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    location: str | None = None
+    website: str | None = None
+    linkedin_url: str | None = None
+    github_url: str | None = None
+    portfolio_url: str | None = None
+    education: list[dict] | None = None
+    experience: list[dict] | None = None
+    skills: list[str] | None = None
+    projects: list[dict] | None = None
+    work_authorization: dict | None = None
+    notice_period: str | None = None
+    salary_expectation: str | None = None
+    willing_to_relocate: bool | None = None
+    preferred_locations: list[str] | None = None
+
+
 # ── Resume ────────────────────────────────────────────────────────────────
 class ResumeResponse(BaseModel):
     id: UUID

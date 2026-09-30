@@ -36,6 +36,48 @@ class User(Base):
     resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
     job_descriptions = relationship("JobDescription", back_populates="user", cascade="all, delete-orphan")
     applications = relationship("Application", back_populates="user", cascade="all, delete-orphan")
+    profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+
+class Profile(Base):
+    """Authoritative candidate profile — the single source of truth for
+    personal facts. The LLM may NEVER invent these values; answers must
+    cite or stay silent."""
+
+    __tablename__ = "profiles"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True, index=True)
+
+    # Contact / identity
+    full_name = Column(String(255), default="")
+    email = Column(String(255), default="")  # preferred contact email (may differ from login)
+    phone = Column(String(50), default="")
+    location = Column(String(255), default="")
+
+    # Links
+    website = Column(String(500), default="")
+    linkedin_url = Column(String(500), default="")
+    github_url = Column(String(500), default="")
+    portfolio_url = Column(String(500), default="")
+
+    # Structured history (JSONB)
+    education = Column(JSONB, default=list)   # [{degree, institution, graduation_year, ...}]
+    experience = Column(JSONB, default=list)  # [{company, title, start, end, highlights: []}]
+    skills = Column(JSONB, default=list)      # ["python", "react", ...]
+    projects = Column(JSONB, default=list)    # [{name, description, url, tech: []}]
+
+    # Sensitive / preference data — never LLM-guessable
+    work_authorization = Column(JSONB, default=dict)  # {status, requires_sponsorship, ...}
+    notice_period = Column(String(100), default="")
+    salary_expectation = Column(String(100), default="")
+    willing_to_relocate = Column(Boolean, nullable=True)
+    preferred_locations = Column(JSONB, default=list)
+
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    user = relationship("User", back_populates="profile")
 
 
 class Resume(Base):

@@ -3,6 +3,7 @@ from app.models.models import (
     JobDescription,
     JobSearchResult,
     MatchScore,
+    Profile,
     Resume,
     ResumeChunk,
     User,
@@ -10,6 +11,7 @@ from app.models.models import (
 
 __all__ = [
     "User",
+    "Profile",
     "Resume",
     "ResumeChunk",
     "JobDescription",
