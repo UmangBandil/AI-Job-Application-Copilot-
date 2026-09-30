@@ -1,0 +1,12 @@
+{
+  "name": "ai-job-application-copilot",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-first AI job application assistant (backend + frontend + browser extension)",
+  "scripts": {
+    "test:extension": "node --test tests/browser/extension.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1"
+  }
+}

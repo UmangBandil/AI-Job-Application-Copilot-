@@ -82,8 +82,11 @@ OLLAMA_MODEL=qwen3:8b
 ## 🧪 Testing
 
 ```bash
-cd backend
-python -m pytest -q   # 56 tests — no Ollama or database required (LLM and network mocked)
+# Backend (no Ollama or database required — LLM and network mocked)
+cd backend && python -m pytest -q
+
+# Browser extension content scripts against local HTML fixtures (Node 18+)
+npm run test:extension
 ```
 
 ## 🌐 Deploy to Render (Free)
@@ -190,7 +193,9 @@ docker compose -f docker-compose.production.yml up --build -d
 
 **PARTIAL:** in-DB vector search for resume chunks (column + index ready; matching still loads chunks in Python) · job-search deduplication
 
-**PLANNED:** Chrome extension (MV3) · answer engine with anti-hallucination field policies · ATS adapters · multi-page application agent · human-review UI · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
+**PARTIAL (2nd line):** browser extension — form detection, field extraction, and classification working (profile/memory/ai/review buckets); deterministic autofill and AI answers land in M4/M5
+
+**PLANNED:** answer engine with anti-hallucination field policies · ATS adapters · multi-page application agent · human-review UI · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
 
 ---
 

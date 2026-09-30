@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head><title>Apply — Lever-style Board</title></head>
+<body>
+  <div class="application">
+    <h2>Platform Engineer — Lever Co</h2>
+    <form id="lever-application">
+      <div class="application-field">
+        <label for="name">Full Name</label>
+        <input id="name" name="name" type="text" />
+      </div>
+      <div class="application-field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" />
+      </div>
+      <div class="application-field">
+        <label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel" />
+      </div>
+      <div class="application-field">
+        <label for="resume">Resume</label>
+        <input id="resume" name="resume" type="file" />
+      </div>
+      <div class="application-field">
+        <label for="work-auth">Are you legally authorized to work in India?</label>
+        <select id="work-auth" name="work_authorization">
+          <option value="">--</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+      <div class="application-field">
+        <label for="sponsorship">Will you now or in the future require sponsorship?</label>
+        <div>
+          <input type="radio" id="sponsor-yes" name="sponsorship" value="yes" />
+          <label for="sponsor-yes">Yes</label>
+          <input type="radio" id="sponsor-no" name="sponsorship" value="no" />
+          <label for="sponsor-no">No</label>
+        </div>
+      </div>
+      <div class="application-field">
+        <label for="links">Links (LinkedIn, GitHub, Portfolio)</label>
+        <input id="links" name="links" type="text" placeholder="https://…" />
+      </div>
+      <button type="submit">Send Application</button>
+    </form>
+  </div>
+</body>
+</html>

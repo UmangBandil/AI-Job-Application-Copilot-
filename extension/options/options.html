@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body {
+      font: 14px/1.5 system-ui, sans-serif;
+      max-width: 560px;
+      margin: 40px auto;
+      padding: 0 16px;
+      color: #1a202c;
+    }
+    h1 { font-size: 18px; }
+    label { display: block; font-weight: 600; margin: 16px 0 4px; }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font: inherit;
+    }
+    .hint { color: #718096; font-size: 12px; margin-top: 4px; }
+    button {
+      margin-top: 20px;
+      padding: 8px 18px;
+      border: 0;
+      border-radius: 6px;
+      background: #2b6cb0;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #status { margin-left: 12px; font-size: 13px; }
+    code { background: #edf2f7; padding: 1px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Job Copilot Assistant — Settings</h1>
+
+  <label for="backend-url">Backend URL</label>
+  <input id="backend-url" type="url" placeholder="http://localhost:8000" />
+  <div class="hint">Your local Job Copilot backend (default <code>http://localhost:8000</code>).</div>
+
+  <label for="token">Auth token</label>
+  <input id="token" type="password" placeholder="Paste your JWT access_token" />
+  <div class="hint">
+    Log into the web app and copy the <code>token</code> from localStorage
+    (DevTools → Application → Local Storage → <code>token</code>).
+  </div>
+
+  <button id="save">Save</button>
+  <span id="status"></span>
+
+  <script src="options.js"></script>
+</body>
+</html>

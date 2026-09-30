@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head><title>Apply — Greenhouse-style Board</title></head>
+<body>
+  <div class="application-form">
+    <h1>Senior Backend Engineer — Acme (via Greenhouse)</h1>
+    <form id="s3_application">
+      <div class="field">
+        <label for="first_name">First Name<span class="req">*</span></label>
+        <input id="first_name" name="first_name" type="text" required />
+      </div>
+      <div class="field">
+        <label for="last_name">Last Name<span class="req">*</span></label>
+        <input id="last_name" name="last_name" type="text" required />
+      </div>
+      <div class="field">
+        <label for="email">Email<span class="req">*</span></label>
+        <input id="email" name="email" type="email" required />
+      </div>
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel" />
+      </div>
+      <div class="field">
+        <label for="resume_file">Resume<span class="req">*</span></label>
+        <input id="resume_file" name="resume_file" type="file" accept=".pdf,.doc,.docx" />
+      </div>
+      <div class="field">
+        <label for="cover_letter">Cover Letter</label>
+        <textarea id="cover_letter" name="cover_letter" rows="6"></textarea>
+      </div>
+      <div class="field">
+        <label for="github">GitHub URL</label>
+        <input id="github" name="github" type="url" />
+      </div>
+      <fieldset>
+        <legend>Voluntary Self-Identification</legend>
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender">
+          <option value="">Select…</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="decline">Decline to self-identify</option>
+        </select>
+        <label for="race">Race/Ethnicity</label>
+        <select id="race" name="race">
+          <option value="">Select…</option>
+          <option value="decline">Decline to self-identify</option>
+        </select>
+      </fieldset>
+      <button type="submit">Submit Application</button>
+    </form>
+  </div>
+</body>
+</html>

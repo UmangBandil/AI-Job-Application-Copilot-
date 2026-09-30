@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><title>Apply — Custom Dropdown</title></head>
+<body>
+  <h1>Application with Custom Components</h1>
+  <form id="custom-form">
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" />
+
+    <!-- ARIA combobox standing in for a custom dropdown -->
+    <label id="exp-label">Years of experience</label>
+    <div id="experience" role="combobox" aria-labelledby="exp-label" aria-expanded="false" tabindex="0">
+      <span class="value">Select…</span>
+      <ul role="listbox" hidden>
+        <li role="option" data-value="0-1">0–1 years</li>
+        <li role="option" data-value="1-3">1–3 years</li>
+        <li role="option" data-value="3-5">3–5 years</li>
+        <li role="option" data-value="5+">5+ years</li>
+      </ul>
+    </div>
+
+    <!-- Shadow DOM host holding a nested input -->
+    <div id="shadow-host"></div>
+
+    <label for="notes">Anything else we should know?</label>
+    <textarea id="notes" name="notes"></textarea>
+  </form>
+
+  <script>
+    // Build a shadow root with an input inside — detector must find it.
+    document.addEventListener('DOMContentLoaded', () => {
+      const host = document.getElementById('shadow-host');
+      const root = host.attachShadow({ mode: 'open' });
+      const wrap = document.createElement('div');
+      wrap.innerHTML =
+        '<label for="referral">Referral code</label>' +
+        '<input id="referral" name="referral" type="text" />';
+      root.appendChild(wrap);
+      document.dispatchEvent(new Event('shadow-ready', { bubbles: true }));
+    });
+  </script>
+</body>
+</html>

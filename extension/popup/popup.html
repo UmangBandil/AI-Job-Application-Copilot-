@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>Job Copilot</h1>
+    <span id="ai-status" class="status offline">checking…</span>
+  </header>
+
+  <section id="page-section">
+    <button id="scan-btn" class="primary">Scan this page</button>
+    <div id="scan-summary" class="summary hidden">
+      <div class="summary-line" id="summary-title"></div>
+      <div class="counts">
+        <span class="count profile"><b id="c-profile">0</b> profile</span>
+        <span class="count memory"><b id="c-memory">0</b> memory</span>
+        <span class="count ai"><b id="c-ai">0</b> ai</span>
+        <span class="count review"><b id="c-review">0</b> review</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="setup-hint" class="hint hidden">
+    Not connected yet —
+    <a href="#" id="open-options">open settings</a>
+    to set your backend URL and token.
+  </section>
+
+  <footer>
+    <button id="options-btn" class="link">Settings</button>
+    <span id="backend-label"></span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

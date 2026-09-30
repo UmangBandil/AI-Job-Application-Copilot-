@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><title>Apply — Multi-Step Application</title></head>
+<body>
+  <!-- Page 1 of a multi-page application: contact section -->
+  <div class="page" data-page="1">
+    <h2>Contact Information</h2>
+    <form id="page1">
+      <section>
+        <h3>Personal Details</h3>
+        <label for="first_name">First Name</label>
+        <input id="first_name" name="first_name" type="text" />
+        <label for="last_name">Last Name</label>
+        <input id="last_name" name="last_name" type="text" />
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" />
+        <label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel" />
+      </section>
+      <section>
+        <h3>Address</h3>
+        <label for="city">City</label>
+        <input id="city" name="city" type="text" />
+        <label for="country">Country</label>
+        <select id="country" name="country">
+          <option value="">--</option>
+          <option value="IN">India</option>
+          <option value="US">United States</option>
+        </select>
+      </section>
+      <button type="button" class="next">Next Page</button>
+    </form>
+  </div>
+</body>
+</html>

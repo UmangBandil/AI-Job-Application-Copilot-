@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Job Copilot Assistant",
+  "version": "0.1.0",
+  "description": "Local-first job application assistant. Detects application forms, fills known profile fields deterministically, and drafts grounded answers with your local LLM. Everything runs on your machine.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Job Copilot Assistant"
+  },
+  "options_page": "options/options.html",
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": [
+        "content/form-detector.js",
+        "content/field-mapper.js",
+        "content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

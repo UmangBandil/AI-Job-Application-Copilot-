@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><title>Apply — Screening Questions</title></head>
+<body>
+  <h1>Screening Questions — FastAI Labs</h1>
+  <form id="screening">
+    <div class="question">
+      <label for="q_experience">How many years of professional experience do you have?</label>
+      <input id="q_experience" name="years_experience" type="number" />
+    </div>
+    <div class="question">
+      <label for="q_java">Do you have experience with Java?</label>
+      <select id="q_java" name="java_experience">
+        <option value="">--</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+    <div class="question">
+      <label for="q_why">Why do you want to work at FastAI Labs?</label>
+      <textarea id="q_why" name="why_company"></textarea>
+    </div>
+    <div class="question">
+      <label for="q_salary">What are your salary expectations?</label>
+      <input id="q_salary" name="salary_expectation" type="text" />
+    </div>
+    <div class="question">
+      <label for="q_notice">What is your notice period?</label>
+      <input id="q_notice" name="notice_period" type="text" />
+    </div>
+    <div class="question">
+      <label for="q_mystery">Describe a project you are proud of.</label>
+      <textarea id="q_mystery" name="proud_project"></textarea>
+    </div>
+    <button type="submit">Continue</button>
+  </form>
+</body>
+</html>

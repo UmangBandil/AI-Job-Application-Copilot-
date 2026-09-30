@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head><title>Apply — Resume Upload</title></head>
+<body>
+  <h1>Upload Your Resume</h1>
+  <form id="upload-form">
+    <label for="resume_input">Resume (PDF or DOCX)</label>
+    <input id="resume_input" name="resume_input" type="file" accept=".pdf,.doc,.docx" required />
+
+    <label for="candidate_name">Full Name</label>
+    <input id="candidate_name" name="candidate_name" type="text" />
+
+    <label for="cover">Short cover note</label>
+    <textarea id="cover" name="cover"></textarea>
+
+    <label>
+      <input type="checkbox" id="consent" name="consent" value="agreed" />
+      I consent to my data being processed
+    </label>
+
+    <button type="submit">Upload &amp; Continue</button>
+  </form>
+</body>
+</html>
