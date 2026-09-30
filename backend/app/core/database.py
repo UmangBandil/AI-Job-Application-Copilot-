@@ -38,6 +38,24 @@ async def get_db():
 
 
 async def init_db():
+    """Bring the schema up to Alembic head at startup.
+
+    The pgvector extension is enabled first (non-fatal if the instance does
+    not support it — migrations that need it will fail loudly instead).
+    """
+    import asyncio
+    import logging
+
+    from sqlalchemy import text
+
+    from app.core.migrations import run_migrations
+
+    logger = logging.getLogger(__name__)
     engine = _get_engine()
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        try:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        except Exception as e:  # noqa: BLE001 — hosted PG without pgvector should still boot
+            logger.warning("Could not enable pgvector extension: %s", e)
+
+    await asyncio.to_thread(run_migrations)

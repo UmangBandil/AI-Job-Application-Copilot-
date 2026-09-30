@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app.core.database import Base
-from app.models.models import *  # noqa: F401, F403  — ensure all models are imported
+import app.models.all  # noqa: F401  — registers every model on Base.metadata
 
 config = context.config
 if config.config_file_name is not None:
