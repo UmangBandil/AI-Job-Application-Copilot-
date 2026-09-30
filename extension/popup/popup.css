@@ -41,6 +41,8 @@ button.primary {
   cursor: pointer;
 }
 button.primary:hover { background: #2c5282; }
+button.primary.secondary { background: #2f855a; margin-top: 8px; }
+button.primary.secondary:hover { background: #276749; }
 
 .summary { margin-top: 10px; }
 .summary-line { font-weight: 600; margin-bottom: 6px; word-break: break-all; }

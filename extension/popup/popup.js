@@ -35,6 +35,44 @@ async function checkConnection() {
   return false;
 }
 
+async function autofillPage() {
+  const btn = $('autofill-btn');
+  btn.disabled = true;
+  btn.textContent = 'Filling…';
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+
+    let resp;
+    try {
+      resp = await chrome.tabs.sendMessage(tab.id, { type: 'autofill' });
+    } catch {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content/form-detector.js', 'content/field-mapper.js', 'content/autofill.js', 'content/content.js'],
+      });
+      resp = await chrome.tabs.sendMessage(tab.id, { type: 'autofill' });
+    }
+
+    if (resp?.ok) {
+      $('autofill-summary').textContent =
+        `${resp.execution.filled} filled from your profile`;
+      $('f-filled').textContent = resp.execution.filled;
+      $('f-skipped').textContent = resp.plan_summary.skipped;
+      $('f-review').textContent = resp.plan_summary.needs_review;
+      $('f-ai').textContent = resp.plan_summary.needs_ai;
+      $('f-failed').textContent = resp.execution.failed;
+      $('autofill-result').classList.remove('hidden');
+    } else {
+      $('autofill-summary').textContent = resp?.error || 'Could not reach the backend';
+      $('autofill-result').classList.remove('hidden');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Autofill profile fields';
+  }
+}
+
 async function scanPage() {
   $('scan-btn').disabled = true;
   $('scan-btn').textContent = 'Scanning…';
@@ -67,6 +105,7 @@ async function scanPage() {
 }
 
 $('scan-btn').addEventListener('click', scanPage);
+$('autofill-btn').addEventListener('click', autofillPage);
 $('options-btn').addEventListener('click', () => chrome.runtime.openOptionsPage());
 $('open-options').addEventListener('click', (e) => {
   e.preventDefault();

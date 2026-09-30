@@ -169,6 +169,7 @@ docker compose -f docker-compose.production.yml up --build -d
 | GET / PATCH | `/api/v1/profile` | Candidate profile (authoritative personal data) |
 | GET | `/api/v1/memory/search` | Semantic search over previous Q/A |
 | POST / GET | `/api/v1/memory/answers` | Save / list question memory |
+| POST | `/api/v1/agent/fill-plan` | Validated browser-action plan from detected fields |
 | POST | `/api/v1/auth/register` | Register new user |
 | POST | `/api/v1/auth/login` | Login |
 | GET | `/api/v1/auth/me` | Current user |
@@ -193,9 +194,9 @@ docker compose -f docker-compose.production.yml up --build -d
 
 **PARTIAL:** in-DB vector search for resume chunks (column + index ready; matching still loads chunks in Python) · job-search deduplication
 
-**PARTIAL (2nd line):** browser extension — form detection, field extraction, and classification working (profile/memory/ai/review buckets); deterministic autofill and AI answers land in M4/M5
+**IMPLEMENTED (2nd line):** browser extension (MV3) — form detection, field extraction, classification (profile/memory/ai/review), and **deterministic autofill** of profile fields via a backend-validated action allow-list (FILL/SELECT/CHECK/UNCHECK/CLICK/… — no arbitrary JS ever); sensitive fields always deferred to human review
 
-**PLANNED:** answer engine with anti-hallucination field policies · ATS adapters · multi-page application agent · human-review UI · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
+**PLANNED:** AI answer engine for unknown fields (M5) · ATS adapters · multi-page application agent · human-review UI · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
 
 ---
 

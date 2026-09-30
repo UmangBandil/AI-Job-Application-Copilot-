@@ -48,6 +48,7 @@ app.add_middleware(
 # All API routes under /api/v1
 api_router = APIRouter(prefix="/api/v1")
 
+from app.api.agent import router as agent_router
 from app.api.ai import router as ai_router
 from app.api.auth import router as auth_router
 from app.api.resumes import router as resumes_router
@@ -59,6 +60,7 @@ from app.api.memory import router as memory_router
 from app.api.profile import router as profile_router
 from app.api.dashboard import router as dashboard_router
 
+api_router.include_router(agent_router)
 api_router.include_router(ai_router)
 api_router.include_router(auth_router)
 api_router.include_router(resumes_router)

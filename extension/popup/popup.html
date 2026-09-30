@@ -12,6 +12,17 @@
 
   <section id="page-section">
     <button id="scan-btn" class="primary">Scan this page</button>
+    <button id="autofill-btn" class="primary secondary">Autofill profile fields</button>
+    <div id="autofill-result" class="summary hidden">
+      <div class="summary-line" id="autofill-summary"></div>
+      <div class="counts">
+        <span class="count profile"><b id="f-filled">0</b> filled</span>
+        <span class="count"><b id="f-skipped">0</b> skipped</span>
+        <span class="count review"><b id="f-review">0</b> review</span>
+        <span class="count ai"><b id="f-ai">0</b> ai</span>
+        <span class="count offline"><b id="f-failed">0</b> failed</span>
+      </div>
+    </div>
     <div id="scan-summary" class="summary hidden">
       <div class="summary-line" id="summary-title"></div>
       <div class="counts">

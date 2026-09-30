@@ -295,6 +295,49 @@ class MemorySearchResponse(BaseModel):
     matches: list[MemoryMatch]
 
 
+# ── Agent / fill plan ─────────────────────────────────────────────────
+class FieldOption(BaseModel):
+    value: str = ""
+    label: str = ""
+
+
+class PlannedFieldInput(BaseModel):
+    """A field detected by the extension (normalized detector schema)."""
+
+    field_id: str
+    selector: str = ""
+    tag: str = ""
+    type: str = "text"
+    label: str = ""
+    name: str = ""
+    placeholder: str = ""
+    aria_label: str = ""
+    options: list[FieldOption] = []
+    action: str = "unknown"  # profile | memory | ai | review | unknown
+    profile_key: str | None = None
+    reason: str | None = None
+
+
+class FillPlanRequest(BaseModel):
+    fields: list[PlannedFieldInput]
+
+
+class PlanItem(BaseModel):
+    field_id: str
+    label: str = ""
+    reason: str = ""
+
+
+class FillPlanResponse(BaseModel):
+    """Validated plan the extension may execute, plus deferrals."""
+
+    plan: list[dict]  # serialized BrowserAction objects (allow-listed)
+    skipped: list[PlanItem] = []
+    needs_review: list[PlanItem] = []
+    needs_ai: list[PlanItem] = []
+    summary: dict = {}
+
+
 # ── Dashboard ──────────────────────────────────────────────────────────
 class DashboardStats(BaseModel):
     total_applications: int
