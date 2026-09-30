@@ -250,6 +250,51 @@ class AIGenerateJSONResponse(BaseModel):
     provider: str
 
 
+# ── Memory ────────────────────────────────────────────────────────────
+class MemoryAnswerCreate(BaseModel):
+    question: str
+    answer: str
+    source: str = "user"  # user | profile | memory | llm
+    confidence: float = 1.0
+    context: str = ""
+
+
+class MemoryAnswerResponse(BaseModel):
+    id: UUID
+    question: str
+    normalized_question: str
+    answer: str
+    source: str
+    confidence: float | None
+    context: str = ""
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class MemoryAnswerUpdate(BaseModel):
+    answer: str | None = None
+    source: str | None = None
+    confidence: float | None = None
+    context: str | None = None
+
+
+class MemoryMatch(BaseModel):
+    id: UUID
+    question: str
+    answer: str
+    source: str
+    confidence: float | None
+    context: str = ""
+    similarity: float
+
+
+class MemorySearchResponse(BaseModel):
+    query: str
+    matches: list[MemoryMatch]
+
+
 # ── Dashboard ──────────────────────────────────────────────────────────
 class DashboardStats(BaseModel):
     total_applications: int

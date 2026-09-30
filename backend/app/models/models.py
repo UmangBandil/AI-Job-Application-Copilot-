@@ -169,6 +169,32 @@ class Application(Base):
     resume = relationship("Resume")
 
 
+class ApplicationQuestion(Base):
+    """Persistent question/answer memory.
+
+    Every application question a user answers is stored with its semantic
+    representation so future similar questions can reuse the approved
+    answer instead of re-generating it. User-provided answers outrank
+    LLM-generated ones (source authority: user > memory > profile > llm).
+    """
+
+    __tablename__ = "application_questions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    question = Column(Text, nullable=False)
+    normalized_question = Column(String(500), nullable=False)
+    answer = Column(Text, nullable=False)
+    # user (typed/approved by the human) | profile | memory | llm
+    source = Column(String(20), nullable=False, default="user")
+    confidence = Column(Float, default=1.0)
+    # optional context (job/company) the answer was given in
+    context = Column(String(500), default="")
+    embedding = Column(Vector(384), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
 class JobSearchResult(Base):
     __tablename__ = "job_search_results"
 

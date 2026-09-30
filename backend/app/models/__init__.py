@@ -1,5 +1,6 @@
 from app.models.models import (
     Application,
+    ApplicationQuestion,
     JobDescription,
     JobSearchResult,
     MatchScore,
@@ -17,5 +18,6 @@ __all__ = [
     "JobDescription",
     "MatchScore",
     "Application",
+    "ApplicationQuestion",
     "JobSearchResult",
 ]
