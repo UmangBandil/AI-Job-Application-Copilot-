@@ -170,6 +170,8 @@ docker compose -f docker-compose.production.yml up --build -d
 | GET | `/api/v1/memory/search` | Semantic search over previous Q/A |
 | POST / GET | `/api/v1/memory/answers` | Save / list question memory |
 | POST | `/api/v1/agent/fill-plan` | Validated browser-action plan from detected fields |
+| POST | `/api/v1/agent/answer` | Review-gated AI answer proposal for one question |
+| POST | `/api/v1/agent/answers/save` | Save a user-accepted answer to question memory |
 | POST | `/api/v1/auth/register` | Register new user |
 | POST | `/api/v1/auth/login` | Login |
 | GET | `/api/v1/auth/me` | Current user |
@@ -196,7 +198,9 @@ docker compose -f docker-compose.production.yml up --build -d
 
 **IMPLEMENTED (2nd line):** browser extension (MV3) — form detection, field extraction, classification (profile/memory/ai/review), and **deterministic autofill** of profile fields via a backend-validated action allow-list (FILL/SELECT/CHECK/UNCHECK/CLICK/… — no arbitrary JS ever); sensitive fields always deferred to human review
 
-**PLANNED:** AI answer engine for unknown fields (M5) · ATS adapters · multi-page application agent · human-review UI · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
+**IMPLEMENTED (3rd line):** **AI answer engine (M5)** — `POST /api/v1/agent/answer` proposes one review-gated answer per question via a policy gate → memory → profile → resume-retrieval → grounded local-LLM pipeline (Pydantic-validated JSON, one retry, confidence gating); server-side field-policy engine re-checks sensitive topics client-independently (work auth / salary / sponsorship / demographics / notice period / relocation / travel are **never** LLM-answered — always `requires_review`); generated answers only reach the page as a backend-validated `fill_action` (same action allow-list as the deterministic plan), and accepted answers are saved to memory via `/agent/answers/save` for deterministic reuse. Extension: needs-AI fields are answered per-field with the same gating (popup shows AI-drafted vs review vs sensitive counts). Verified via mocked providers/sessions (132 backend + 37 extension tests) — no live Ollama/DB on this machine.
+
+**PLANNED:** ATS adapters · multi-page application agent · human-review UI for AI proposals (M8) · Playwright fixture tests — see [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
 
 ---
 

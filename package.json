@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Local-first AI job application assistant (backend + frontend + browser extension)",
   "scripts": {
-    "test:extension": "node --test tests/browser/extension.test.js tests/browser/autofill.test.js"
+    "test:extension": "node --test tests/browser/extension.test.js tests/browser/autofill.test.js tests/browser/answer.test.js"
   },
   "devDependencies": {
     "jsdom": "^25.0.1"

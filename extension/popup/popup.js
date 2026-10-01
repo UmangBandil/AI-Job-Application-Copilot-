@@ -49,7 +49,7 @@ async function autofillPage() {
     } catch {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        files: ['content/form-detector.js', 'content/field-mapper.js', 'content/autofill.js', 'content/content.js'],
+        files: ['content/form-detector.js', 'content/field-mapper.js', 'content/autofill.js', 'content/answer.js', 'content/content.js'],
       });
       resp = await chrome.tabs.sendMessage(tab.id, { type: 'autofill' });
     }
@@ -62,6 +62,23 @@ async function autofillPage() {
       $('f-review').textContent = resp.plan_summary.needs_review;
       $('f-ai').textContent = resp.plan_summary.needs_ai;
       $('f-failed').textContent = resp.execution.failed;
+
+      // Answer-engine proposals (M5): approved fills + review queue.
+      if (resp.answers) {
+        const a = resp.answers;
+        if (a.filled > 0) {
+          $('autofill-summary').textContent +=
+            ` + ${a.filled} AI-drafted (approved)`;
+        }
+        if (a.needs_answer > 0) {
+          $('autofill-summary').textContent +=
+            ` · ${a.needs_answer} sensitive — answer these yourself`;
+        } else if (a.needs_review > 0) {
+          $('autofill-summary').textContent +=
+            ` · ${a.needs_review} drafted for your review`;
+        }
+      }
+
       $('autofill-result').classList.remove('hidden');
     } else {
       $('autofill-summary').textContent = resp?.error || 'Could not reach the backend';

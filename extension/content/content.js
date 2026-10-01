@@ -17,7 +17,6 @@
     lastScan = scanResult;
     return scanResult;
   }
-
   function summarize(scanResult) {
     const counts = { profile: 0, memory: 0, ai: 0, review: 0, unknown: 0 };
     for (const m of scanResult.mapped) counts[m.action] = (counts[m.action] || 0) + 1;
@@ -27,6 +26,32 @@
       field_count: scanResult.field_count,
       actions: counts,
     };
+  }
+
+  // Ask the answer engine (M5) for review-gated proposals on the fields
+  // the deterministic plan deferred. Sequential on purpose: one request
+  // per field, no fan-out surprises on slow local LLMs.
+  async function requestAnswers(scanResult, needsAi, jobDescription) {
+    const answer = window.JobCopilotAnswer;
+    if (!answer || !needsAi || needsAi.length === 0) return [];
+    const proposals = [];
+    for (const item of needsAi) {
+      const field = scanResult.fields.find((f) => f.field_id === item.field_id);
+      if (!field) continue;
+      const mapped = scanResult.mapped.find((m) => m.field_id === item.field_id);
+      try {
+        const resp = await chrome.runtime.sendMessage({
+          type: 'api',
+          path: '/api/v1/agent/answer',
+          method: 'POST',
+          body: answer.buildPayload(field, mapped, jobDescription),
+        });
+        if (resp?.ok) proposals.push(resp.data);
+      } catch (_err) {
+        // Answer engine offline — proposals just stay empty.
+      }
+    }
+    return proposals;
   }
 
   async function autofill() {
@@ -62,6 +87,12 @@
     // 2. Execute only the backend-approved actions.
     const execution = window.JobCopilotAutofill.executePlan(plan.plan);
 
+    // 3. Answer engine for deferred fields (review-gated proposals).
+    const proposals = await requestAnswers(scanResult, plan.needs_ai, '');
+    const answerSummary = window.JobCopilotAnswer
+      ? window.JobCopilotAnswer.summarizeProposals(proposals)
+      : null;
+
     return {
       ok: true,
       summary: summarize(scanResult),
@@ -70,6 +101,7 @@
       needs_review: plan.needs_review,
       needs_ai: plan.needs_ai,
       execution,
+      answers: answerSummary,
     };
   }
 

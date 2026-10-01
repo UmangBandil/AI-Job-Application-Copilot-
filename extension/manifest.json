@@ -23,6 +23,7 @@
         "content/form-detector.js",
         "content/field-mapper.js",
         "content/autofill.js",
+        "content/answer.js",
         "content/content.js"
       ],
       "run_at": "document_idle"

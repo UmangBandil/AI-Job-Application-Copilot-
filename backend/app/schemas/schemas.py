@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────
@@ -336,6 +336,52 @@ class FillPlanResponse(BaseModel):
     needs_review: list[PlanItem] = []
     needs_ai: list[PlanItem] = []
     summary: dict = {}
+
+
+# ── Agent / answer engine (M5) ────────────────────────────────────────
+class AnswerFieldOption(BaseModel):
+    value: str = ""
+    label: str = ""
+
+
+class AnswerRequest(BaseModel):
+    """One application question the answer engine should propose for."""
+
+    question: str = Field(min_length=1, max_length=2000)
+    job_description: str = ""
+    field_type: str = "text"  # text | textarea | select | radio | checkbox
+    field_options: list[AnswerFieldOption] = []
+    field_id: str | None = None
+    selector: str | None = None
+    client_policy: str | None = None  # extension's mapper classification
+    max_chars: int = Field(default=500, ge=1, le=5000)
+
+
+class AnswerProposal(BaseModel):
+    """Review-gated answer proposal for one question."""
+
+    question: str
+    policy: str
+    answer: str | None = None
+    confidence: float = 0.0
+    requires_review: bool = True
+    source: str = "none"  # none | profile | memory | llm
+    policy_reason: str = ""
+    notes: str = ""
+    fill_action: dict | None = None  # backend-validated BrowserAction
+    memory_match: dict | None = None
+    llm_raw: str | None = None
+    anomalies: list[str] = []
+
+
+class SaveAnswerRequest(BaseModel):
+    """Store an accepted (usually human-reviewed) answer into memory."""
+
+    question: str = Field(min_length=1, max_length=2000)
+    answer: str = Field(min_length=1, max_length=5000)
+    source: str = Field(default="user", pattern="^(user|memory|profile|llm)$")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    context: str = ""
 
 
 # ── Dashboard ──────────────────────────────────────────────────────────
