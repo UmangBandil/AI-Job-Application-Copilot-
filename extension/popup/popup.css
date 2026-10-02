@@ -43,14 +43,26 @@ button.primary {
 button.primary:hover { background: #2c5282; }
 button.primary.secondary { background: #2f855a; margin-top: 8px; }
 button.primary.secondary:hover { background: #276749; }
+button#fast-apply-btn { background: linear-gradient(135deg, #2b6cb0, #805ad5); }
+button#fast-apply-btn:hover { background: linear-gradient(135deg, #2c5282, #6b46c1); }
 
 .summary { margin-top: 10px; }
 .summary-line { font-weight: 600; margin-bottom: 6px; word-break: break-all; }
 
 .counts { display: flex; gap: 8px; flex-wrap: wrap; }
+.counts.compact { margin-top: 6px; }
 .count { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #edf2f7; }
 .count.review { background: #fefcbf; }
 .count.profile { background: #bee3f8; }
+.count.ai { background: #e9d8fd; }
+.count.offline { background: #fed7d7; }
+
+.warnings {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #7c2d12;
+  font-size: 11px;
+}
 
 .hint { color: #744210; background: #fefcbf; margin: 0 12px; padding: 8px 10px; border-radius: 6px; }
 .hint.hidden, .summary.hidden { display: none; }

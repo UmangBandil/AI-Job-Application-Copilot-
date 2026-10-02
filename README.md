@@ -203,7 +203,9 @@ docker compose -f docker-compose.production.yml up --build -d
 
 **IMPLEMENTED (4th line):** **Fast Apply batch analysis (M6)** — `POST /api/v1/fast-apply/analyze` analyzes a whole detected form in ONE request: server-side classification of every field with a confidence score (profile 0.95 · choice 0.85 · open question 0.90 · sensitive 1.0 · unclassifiable 0.0), job upsert with dedup (source_url, else company+title), duplicate-application detection ("You already applied on DATE"), and bucketed output — `safe_actions` (≥ 0.90, validated BrowserActions from the deterministic planner), `review_actions` (0.70–0.89 fillable only after human review, plus no-selector/no-saved-answer/unknown fields), `blocked_actions` (sensitive topics + password fields — never auto-filled), and capped batch answer generation (default 5, each with provenance `sources`). Warnings are always surfaced (unknown fields, sensitive fields, no resume, no JD text, generation-cap deferrals, duplicates). Nothing is filled or submitted by the endpoint — extension wiring lands in M7. Verified via mocked providers/sessions (153 backend + 37 extension tests) — see [docs/FAST_APPLY_PLAN.md](docs/FAST_APPLY_PLAN.md).
 
-**PLANNED:** Fast Apply extension UX + review screen (M7) · safe submission + tracker write-back (M8) · multi-page sessions (M9) · resume recommendation (M10) · analytics + observability (M11) · hardening + Playwright (M12) — see [docs/FAST_APPLY_PLAN.md](docs/FAST_APPLY_PLAN.md)
+**IMPLEMENTED (5th line):** Fast Apply extension UX + review summary (M7) — the popup now exposes a real ⚡ FAST APPLY action, calls the backend’s batched analyze endpoint, executes only safe validated actions, and surfaces warnings / review counts. Safe submission + tracker write-back (M8), multi-page sessions (M9), resume recommendation (M10), and the remaining hardening steps remain in the plan.
+
+**PLANNED:** safe submission + tracker write-back (M8) · multi-page sessions (M9) · resume recommendation (M10) · analytics + observability (M11) · hardening + Playwright (M12) — see [docs/FAST_APPLY_PLAN.md](docs/FAST_APPLY_PLAN.md)
 
 ---
 

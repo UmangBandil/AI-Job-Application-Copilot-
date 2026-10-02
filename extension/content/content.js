@@ -17,6 +17,7 @@
     lastScan = scanResult;
     return scanResult;
   }
+
   function summarize(scanResult) {
     const counts = { profile: 0, memory: 0, ai: 0, review: 0, unknown: 0 };
     for (const m of scanResult.mapped) counts[m.action] = (counts[m.action] || 0) + 1;
@@ -25,6 +26,47 @@
       title: scanResult.title,
       field_count: scanResult.field_count,
       actions: counts,
+    };
+  }
+
+  function extractJobMetadata(scanResult) {
+    const textFrom = (selector) => {
+      if (!selector) return '';
+      const node = document.querySelector(selector);
+      if (!node) return '';
+      return (node.textContent || '').replace(/\s+/g, ' ').trim();
+    };
+
+    const companyCandidates = [
+      '[data-company-name]', '.company-name', '.employer', '.org-name', 'meta[property="og:site_name"]',
+      '[class*="company"]', '[data-testid*="company"]', '[itemprop="hiringOrganization"]',
+    ];
+    const titleCandidates = [
+      'h1', 'h2', '[data-job-title]', '.job-title', '.position-title', 'meta[property="og:title"]',
+      '[class*="job-title"]', '[data-testid*="job-title"]',
+    ];
+
+    const company = companyCandidates
+      .map(textFrom)
+      .find(Boolean) ||
+      (document.querySelector('meta[property="og:site_name"]')?.content || '') ||
+      (new URL(scanResult.url || location.href).hostname || '').replace(/\.(com|net|org|io)$/i, '').replace(/\./g, ' ');
+
+    const jobTitle = titleCandidates
+      .map(textFrom)
+      .find(Boolean) ||
+      (document.querySelector('meta[property="og:title"]')?.content || '').replace(/\s*[-|].*$/, '').trim() ||
+      (document.title || '').replace(/\s*[-|].*$/, '').trim() ||
+      'Untitled role';
+
+    const descriptionRoot = document.querySelector('main, article, [data-job-description], .job-description, .description, .content') || document.body;
+    const jobDescription = (descriptionRoot?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 50000);
+
+    return {
+      company: company.trim().slice(0, 255),
+      job_title: jobTitle.trim().slice(0, 500),
+      job_description: jobDescription,
+      page_url: scanResult.url || location.href,
     };
   }
 
@@ -105,6 +147,68 @@
     };
   }
 
+  async function fastApply() {
+    const scanResult = scan();
+    const metadata = extractJobMetadata(scanResult);
+
+    const analyzeResp = await chrome.runtime.sendMessage({
+      type: 'api',
+      path: '/api/v1/fast-apply/analyze',
+      method: 'POST',
+      body: {
+        page_url: metadata.page_url,
+        job_title: metadata.job_title,
+        company: metadata.company,
+        job_description: metadata.job_description,
+        fields: scanResult.fields.map((field) => ({
+          field_id: field.field_id,
+          selector: field.selector,
+          tag: field.tag,
+          type: field.type,
+          label: field.label,
+          name: field.name,
+          placeholder: field.placeholder,
+          aria_label: field.aria_label,
+          options: (field.options || []).map((o) => ({ value: o.value, label: o.label })),
+          required: Boolean(field.required),
+        })),
+        max_generated: 5,
+      },
+    });
+
+    if (!analyzeResp?.ok) {
+      return {
+        ok: false,
+        error: (analyzeResp && (analyzeResp.error || analyzeResp.data)) || 'Fast Apply could not connect to the backend.',
+        summary: summarize(scanResult),
+      };
+    }
+
+    const analysis = analyzeResp.data || {};
+    const execution = analysis.safe_actions && analysis.safe_actions.length
+      ? window.JobCopilotAutofill.executePlan(analysis.safe_actions)
+      : { filled: 0, deferred: 0, failed: 0, details: [] };
+
+    const result = {
+      ok: true,
+      summary: summarize(scanResult),
+      job: analysis.job || null,
+      warnings: analysis.warnings || [],
+      already_applied: analysis.already_applied || null,
+      execution,
+      analysis,
+      safe_actions_count: analysis.summary?.safe_actions ?? (analysis.safe_actions || []).length,
+      review_actions_count: analysis.summary?.review_actions ?? (analysis.review_actions || []).length,
+      blocked_actions_count: analysis.summary?.blocked_actions ?? (analysis.blocked_actions || []).length,
+      generated_answers_count: analysis.summary?.generated_answers ?? (analysis.generated_answers || []).length,
+      review_actions: analysis.review_actions || [],
+      blocked_actions: analysis.blocked_actions || [],
+      generated_answers: analysis.generated_answers || [],
+    };
+
+    return result;
+  }
+
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg.type === 'scan') {
       const result = scan();
@@ -120,11 +224,17 @@
       autofill()
         .then((result) => sendResponse(result))
         .catch((err) => sendResponse({ ok: false, error: String((err && err.message) || err) }));
-      return true; // async response
+      return true;
+    }
+    if (msg.type === 'fastApply') {
+      fastApply()
+        .then((result) => sendResponse(result))
+        .catch((err) => sendResponse({ ok: false, error: String((err && err.message) || err) }));
+      return true;
     }
     return false;
   });
 
   // Expose for tests / manual debugging in the page console.
-  window.JobCopilotContent = { scan, summarize, autofill };
+  window.JobCopilotContent = { scan, summarize, autofill, fastApply };
 })();

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Acme Software Engineer Application</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 900px; margin: 32px auto; padding: 16px; }
+      section { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+      label { display: block; margin: 8px 0 4px; font-weight: 600; }
+      input, select, textarea { width: 100%; box-sizing: border-box; padding: 8px; margin-bottom: 8px; }
+      .inline { display: flex; gap: 12px; }
+      .inline > * { flex: 1; }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Software Engineer</h1>
+    <p>Company: <strong>Acme</strong></p>
+
+    <section>
+      <h2>Personal details</h2>
+      <div class="inline">
+        <div>
+          <label for="first_name">First name</label>
+          <input id="first_name" name="first_name" placeholder="First name" />
+        </div>
+        <div>
+          <label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" placeholder="Last name" />
+        </div>
+      </div>
+
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" placeholder="you@example.com" />
+
+      <label for="phone">Phone</label>
+      <input id="phone" name="phone" placeholder="+1 555 010 0000" />
+
+      <label for="location">Location</label>
+      <input id="location" name="location" placeholder="City, Country" />
+
+      <label for="linkedin">LinkedIn</label>
+      <input id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/you" />
+
+      <label for="github">GitHub</label>
+      <input id="github" name="github" placeholder="https://github.com/you" />
+    </section>
+
+    <section>
+      <h2>Experience</h2>
+      <label for="education">Education</label>
+      <textarea id="education" name="education" rows="3" placeholder="Degree, school, dates"></textarea>
+
+      <label for="experience">Experience summary</label>
+      <textarea id="experience" name="experience" rows="4" placeholder="Years of experience and highlights"></textarea>
+
+      <label for="skills">Skills</label>
+      <textarea id="skills" name="skills" rows="3" placeholder="Python, SQL, FastAPI, Docker"></textarea>
+    </section>
+
+    <section>
+      <h2>Application details</h2>
+      <label for="why_us">Why do you want this job?</label>
+      <textarea id="why_us" name="why_us" rows="5" placeholder="Tell us why you want to work here."></textarea>
+
+      <label for="years_exp">Years of experience</label>
+      <select id="years_exp" name="years_exp">
+        <option value="">Select</option>
+        <option value="1">1-2 years</option>
+        <option value="3">3-5 years</option>
+        <option value="6">6+ years</option>
+      </select>
+
+      <label for="work_auth">Work authorization</label>
+      <select id="work_auth" name="work_auth">
+        <option value="">Select</option>
+        <option value="citizen">Citizen</option>
+        <option value="visa_required">Require sponsorship</option>
+      </select>
+
+      <label for="salary">Salary expectation</label>
+      <input id="salary" name="salary" placeholder="$120,000" />
+
+      <label for="resume">Resume upload</label>
+      <input id="resume" name="resume" type="file" />
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" />
+
+      <label>Remote preference</label>
+      <div>
+        <input id="remote_yes" name="remote_pref" type="radio" value="yes" />
+        <label for="remote_yes" style="display:inline">Remote</label>
+        <input id="remote_no" name="remote_pref" type="radio" value="no" />
+        <label for="remote_no" style="display:inline">Hybrid</label>
+      </div>
+
+      <label for="consent">I agree to be contacted</label>
+      <input id="consent" name="consent" type="checkbox" />
+    </section>
+
+    <section>
+      <h2>Review</h2>
+      <button type="button" id="next_page">Next page</button>
+      <button type="submit">Submit application</button>
+    </section>
+  </body>
+</html>

@@ -16,6 +16,8 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURES = path.join(ROOT, 'tests', 'browser', 'fixtures');
 const DETECTOR_SRC = fs.readFileSync(path.join(ROOT, 'extension', 'content', 'form-detector.js'), 'utf8');
 const MAPPER_SRC = fs.readFileSync(path.join(ROOT, 'extension', 'content', 'field-mapper.js'), 'utf8');
+const AUTOFILL_SRC = fs.readFileSync(path.join(ROOT, 'extension', 'content', 'autofill.js'), 'utf8');
+const CONTENT_SRC = fs.readFileSync(path.join(ROOT, 'extension', 'content', 'content.js'), 'utf8');
 
 /** Load a fixture into jsdom with the real content scripts executed. */
 function loadFixture(filename) {
@@ -217,4 +219,63 @@ test('safety: every mapped field carries a selector for later fill actions', () 
       assert.ok(f.selector, `${file}: ${f.field_id} missing selector`);
     }
   }
+});
+
+test('content flow: fastApply runs one analyze request and executes safe actions', async () => {
+  const html = `
+    <html><body>
+      <form>
+        <label for="first_name">First name</label>
+        <input id="first_name" name="first_name" />
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" />
+      </form>
+    </body></html>
+  `;
+  const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true });
+  const { window } = dom;
+
+  if (!window.getComputedStyle) {
+    window.getComputedStyle = () => ({ display: '', visibility: '', opacity: '' });
+  }
+
+  const calls = [];
+  const chromeApi = {
+    runtime: {
+      onMessage: { addListener() {} },
+      sendMessage: async (msg) => {
+        calls.push(msg);
+        if (msg.type === 'api' && msg.path === '/api/v1/fast-apply/analyze') {
+          return {
+            ok: true,
+            data: {
+              job: { title: 'Software Engineer', company: 'Acme', source_url: 'https://example.com/job', created: false },
+              safe_actions: [{ action: 'FILL', field_id: 'first_name', selector: '#first_name', value: 'Ada' }],
+              review_actions: [],
+              blocked_actions: [],
+              generated_answers: [],
+              warnings: [],
+              already_applied: null,
+              summary: { safe_actions: 1, review_actions: 0, blocked_actions: 0, generated_answers: 0 },
+            },
+          };
+        }
+        return { ok: true, data: {} };
+      },
+    },
+  };
+  window.chrome = chromeApi;
+  globalThis.chrome = chromeApi;
+
+  window.eval(DETECTOR_SRC);
+  window.eval(MAPPER_SRC);
+  window.eval(AUTOFILL_SRC);
+  window.eval(CONTENT_SRC);
+
+  const result = await window.JobCopilotContent.fastApply();
+
+  assert.ok(calls.some((m) => m.type === 'api' && m.path === '/api/v1/fast-apply/analyze'));
+  assert.equal(result.ok, true);
+  assert.equal(result.safe_actions_count, 1);
+  assert.equal(window.document.getElementById('first_name').value, 'Ada');
 });

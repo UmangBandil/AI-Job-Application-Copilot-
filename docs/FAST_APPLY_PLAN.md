@@ -106,9 +106,9 @@ plan: each milestone updates the checkboxes here and the README status.
 
 ### M7 — Extension Fast Apply UX + review screen (Phases 2, 6-UI, 9, 24)
 - ⚡ FAST APPLY button → one analyze call → execute `safe_actions` →
-  review screen: per-field rows, AI answers with edit/accept (accept →
-  `/agent/answers/save`, then fill), "reused previous answer" prompt with
-  use/edit/regenerate options, counts summary.
+  review summary: safe/review/blocked counts and warnings are surfaced in the
+  popup, while backend-validated actions remain the only browser-side fill
+  path. Full per-field edit/accept UX is still the next expansion point.
 - Fill application → "Review Application" state (no submit yet).
 
 ### M8 — Safe submission + tracker write-back (Phases 10, 15, 23)

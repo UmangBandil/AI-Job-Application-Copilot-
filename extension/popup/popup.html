@@ -12,6 +12,7 @@
 
   <section id="page-section">
     <button id="scan-btn" class="primary">Scan this page</button>
+    <button id="fast-apply-btn" class="primary secondary">⚡ FAST APPLY</button>
     <button id="autofill-btn" class="primary secondary">Autofill profile fields</button>
     <div id="autofill-result" class="summary hidden">
       <div class="summary-line" id="autofill-summary"></div>
@@ -31,6 +32,16 @@
         <span class="count ai"><b id="c-ai">0</b> ai</span>
         <span class="count review"><b id="c-review">0</b> review</span>
       </div>
+    </div>
+    <div id="fast-apply-result" class="summary hidden">
+      <div class="summary-line" id="fast-apply-summary"></div>
+      <div class="counts compact">
+        <span class="count profile"><b id="fa-safe">0</b> safe</span>
+        <span class="count review"><b id="fa-review">0</b> review</span>
+        <span class="count ai"><b id="fa-ai">0</b> AI</span>
+        <span class="count offline"><b id="fa-blocked">0</b> blocked</span>
+      </div>
+      <ul id="fast-apply-warnings" class="warnings"></ul>
     </div>
   </section>
 

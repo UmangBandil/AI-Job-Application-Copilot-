@@ -90,6 +90,64 @@ async function autofillPage() {
   }
 }
 
+async function fastApplyPage() {
+  const btn = $('fast-apply-btn');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing…';
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) return;
+
+    let resp;
+    try {
+      resp = await chrome.tabs.sendMessage(tab.id, { type: 'fastApply' });
+    } catch {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content/form-detector.js', 'content/field-mapper.js', 'content/autofill.js', 'content/answer.js', 'content/content.js'],
+      });
+      resp = await chrome.tabs.sendMessage(tab.id, { type: 'fastApply' });
+    }
+
+    if (resp?.ok) {
+      const summary = resp.analysis?.summary || {};
+      const job = resp.job || {};
+      const role = job.title || 'Application';
+      const company = job.company || 'This company';
+      $('fast-apply-summary').textContent = `${company} · ${role}`;
+      $('fa-safe').textContent = summary.safe_actions || resp.safe_actions_count || 0;
+      $('fa-review').textContent = summary.review_actions || resp.review_actions_count || 0;
+      $('fa-ai').textContent = summary.generated_answers || resp.generated_answers_count || 0;
+      $('fa-blocked').textContent = summary.blocked_actions || resp.blocked_actions_count || 0;
+
+      const warnings = resp.warnings || [];
+      const list = $('fast-apply-warnings');
+      list.innerHTML = '';
+      if (warnings.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No warnings.';
+        list.appendChild(li);
+      } else {
+        for (const warning of warnings) {
+          const li = document.createElement('li');
+          li.textContent = warning;
+          list.appendChild(li);
+        }
+      }
+
+      $('fast-apply-result').classList.remove('hidden');
+      $('autofill-result').classList.add('hidden');
+    } else {
+      $('fast-apply-summary').textContent = resp?.error || 'Fast Apply could not connect to the backend.';
+      $('fast-apply-result').classList.remove('hidden');
+      $('fast-apply-warnings').innerHTML = '';
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ FAST APPLY';
+  }
+}
+
 async function scanPage() {
   $('scan-btn').disabled = true;
   $('scan-btn').textContent = 'Scanning…';
@@ -122,6 +180,7 @@ async function scanPage() {
 }
 
 $('scan-btn').addEventListener('click', scanPage);
+$('fast-apply-btn').addEventListener('click', fastApplyPage);
 $('autofill-btn').addEventListener('click', autofillPage);
 $('options-btn').addEventListener('click', () => chrome.runtime.openOptionsPage());
 $('open-options').addEventListener('click', (e) => {
