@@ -366,6 +366,7 @@ class AnswerProposal(BaseModel):
     confidence: float = 0.0
     requires_review: bool = True
     source: str = "none"  # none | profile | memory | llm
+    sources: list[str] = []  # provenance: profile | memory | resume | job_description | llm
     policy_reason: str = ""
     notes: str = ""
     fill_action: dict | None = None  # backend-validated BrowserAction
@@ -382,6 +383,110 @@ class SaveAnswerRequest(BaseModel):
     source: str = Field(default="user", pattern="^(user|memory|profile|llm)$")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     context: str = ""
+
+
+# ── Fast Apply batch analysis (M6) ────────────────────────────────────
+class FastApplyFieldOption(BaseModel):
+    value: str = ""
+    label: str = ""
+
+
+class FastApplyFieldInput(BaseModel):
+    """One detected form field, as sent by the extension's scanner."""
+
+    field_id: str
+    selector: str = ""
+    tag: str = ""
+    type: str = "text"
+    label: str = ""
+    name: str = ""
+    placeholder: str = ""
+    aria_label: str = ""
+    options: list[FastApplyFieldOption] = []
+    required: bool = False
+
+
+class FastApplyAnalyzeRequest(BaseModel):
+    """ONE batched analyze request for a whole application form."""
+
+    page_url: str = Field(min_length=1, max_length=2048)
+    job_title: str = Field(default="", max_length=500)
+    company: str = Field(default="", max_length=255)
+    job_description: str = Field(default="", max_length=50000)
+    fields: list[FastApplyFieldInput] = []
+    max_generated: int = Field(default=5, ge=0, le=20)
+
+
+class FastApplyFieldClassification(BaseModel):
+    field_id: str
+    label: str = ""
+    type: str = "text"
+    policy: str  # profile_only | profile_or_memory | llm_generated | user_confirmation_required | unknown
+    reason: str = ""
+    confidence: float = 0.0
+    required: bool = False
+
+
+class FastApplyReviewAction(BaseModel):
+    """A field the human must look at. fill_action (when present) may be
+    executed only after the user reviews it (0.70–0.89 confidence band)."""
+
+    field_id: str
+    label: str = ""
+    reason: str = ""
+    confidence: float = 0.0
+    fill_action: dict | None = None
+
+
+class FastApplyBlockedAction(BaseModel):
+    """A sensitive (or credential) field that is never auto-filled."""
+
+    field_id: str
+    label: str = ""
+    reason: str = ""
+
+
+class FastApplyGeneratedAnswer(BaseModel):
+    """A proposed answer (reused from memory or generated) awaiting review."""
+
+    field_id: str | None = None
+    question: str
+    answer: str | None = None
+    confidence: float = 0.0
+    requires_review: bool = True
+    source: str = "none"  # none | memory | llm
+    sources: list[str] = []
+    notes: str = ""
+    fill_action: dict | None = None
+    memory_match: dict | None = None
+
+
+class FastApplyJob(BaseModel):
+    id: UUID | None = None
+    title: str = ""
+    company: str = ""
+    source_url: str = ""
+    created: bool = False  # True when this analyze call created the row
+
+
+class FastApplyAlreadyApplied(BaseModel):
+    application_id: UUID
+    status: str
+    applied_at: datetime | None = None
+
+
+class FastApplyAnalyzeResponse(BaseModel):
+    """Bucketed Fast Apply proposal — a review artifact, never a submission."""
+
+    job: FastApplyJob
+    fields: list[FastApplyFieldClassification] = []
+    safe_actions: list[dict] = []
+    review_actions: list[FastApplyReviewAction] = []
+    blocked_actions: list[FastApplyBlockedAction] = []
+    generated_answers: list[FastApplyGeneratedAnswer] = []
+    warnings: list[str] = []
+    already_applied: FastApplyAlreadyApplied | None = None
+    summary: dict = {}
 
 
 # ── Dashboard ──────────────────────────────────────────────────────────

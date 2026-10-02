@@ -7,11 +7,14 @@ Pipeline for ONE application question:
         and one retry-with-error → confidence gating → requires_review fallback
 
 Trust properties:
-  * Sensitive questions never reach the LLM (policy gate first).
+  * Sensitive questions never reach the LLM (policy gate first); UNKNOWN
+    fields (no recognizable label) never reach the LLM either.
   * LLM output is validated into a narrow Pydantic shape; invalid output
     downgrades to requires_review rather than flowing anywhere.
   * The response's fill_action is a backend-validated BrowserAction — the
     raw LLM string never controls the browser directly.
+  * `sources` records what the proposal was grounded in (profile / memory /
+    resume / job_description / llm) so the review UI can show provenance.
 """
 
 import logging
@@ -24,9 +27,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.actions import BrowserAction
 from app.ai.agents.field_policy import (
     AnswerPolicy,
-    _PROFILE_PATTERNS,
     classify_question,
     client_policy_matches,
+    match_profile_key,
 )
 from app.ai.prompts.form_answer import ANSWER_SYSTEM_PROMPT, build_answer_prompt
 from app.ai.retrieval.profile_retriever import (
@@ -62,6 +65,7 @@ class AnswerResponse(BaseModel):
     confidence: float = 0.0
     requires_review: bool = True
     source: str = "none"  # none | profile | memory | llm
+    sources: list[str] = []  # provenance: profile | memory | resume | job_description | llm
     policy_reason: str = ""
     notes: str = ""
     fill_action: dict | None = None  # validated BrowserAction, or None
@@ -108,14 +112,6 @@ def _profile_value_for(profile: Profile, profile_key: str) -> str | None:
             return parts[0]
         return parts[-1] if len(parts) > 1 else None
 
-    return None
-
-
-def _match_profile_key(question: str) -> str | None:
-    q = (question or "").lower()
-    for profile_key, pattern in _PROFILE_PATTERNS:
-        if pattern.search(q):
-            return profile_key
     return None
 
 
@@ -298,8 +294,9 @@ async def generate_answer(
     max_chars: int = 500,
 ) -> AnswerResponse:
     """Produce a review-gated answer proposal for one question."""
-    # 1. Policy gate — sensitive topics never reach the LLM.
-    policy, policy_reason = classify_question(question, field_type)
+    # 1. Policy gate — sensitive topics and unclassifiable fields never
+    # reach the LLM.
+    policy, policy_reason, _policy_confidence = classify_question(question, field_type)
 
     def _anomalies(extra: str | None = None) -> list[str]:
         return [a for a in (client_anomaly, extra) if a]
@@ -324,6 +321,19 @@ async def generate_answer(
             anomalies=_anomalies(anomaly_note),
         )
 
+    if policy is AnswerPolicy.UNKNOWN:
+        return AnswerResponse(
+            question=question,
+            policy=policy.value,
+            answer=None,
+            confidence=0.0,
+            requires_review=True,
+            source="none",
+            policy_reason=policy_reason,
+            notes="Field could not be classified — answer this yourself.",
+            anomalies=_anomalies(anomaly_note),
+        )
+
     # 2. Memory retrieval.
     memory = await _retrieve_memory(db, user, question)
 
@@ -337,7 +347,7 @@ async def generate_answer(
 
     # 5. Deterministic paths first (profile, then memory).
     if policy in (AnswerPolicy.PROFILE_ONLY, AnswerPolicy.PROFILE_OR_MEMORY):
-        profile_key = _match_profile_key(question)
+        profile_key = match_profile_key(question)
         if profile_key:
             value = _profile_value_for(profile, profile_key)
             if value:
@@ -348,6 +358,7 @@ async def generate_answer(
                     confidence=1.0,
                     requires_review=False,
                     source="profile",
+                    sources=["profile"],
                     policy_reason=policy_reason,
                     fill_action=_build_fill_action(field_type, field_options, value, field_id, selector),
                     notes=f"Filled from profile field '{profile_key}'.",
@@ -363,6 +374,7 @@ async def generate_answer(
                     confidence=float(top.get("confidence") or 0.9),
                     requires_review=False,
                     source="memory",
+                    sources=["memory"],
                     policy_reason=policy_reason,
                     fill_action=_build_fill_action(field_type, field_options, top["answer"], field_id, selector),
                     notes=f"Reused saved answer (similarity {top.get('similarity', 0):.2f}).",
@@ -416,9 +428,10 @@ async def generate_answer(
             "'insufficient_context'."
         )
 
+    profile_ctx_text = profile_context_as_text(profile)
     prompt = build_answer_prompt(
         question=question,
-        profile_context=profile_context_as_text(profile),
+        profile_context=profile_ctx_text,
         memory_matches=memory,
         resume_excerpts=resume_excerpts,
         job_description=job_description,
@@ -426,6 +439,17 @@ async def generate_answer(
         field_options=allowed_labels,
         max_chars=max_chars,
     )
+
+    # Provenance: what this proposal was actually grounded in.
+    sources = ["llm"]
+    if profile_ctx_text.strip():
+        sources.append("profile")
+    if memory:
+        sources.append("memory")
+    if resume_excerpts:
+        sources.append("resume")
+    if (job_description or "").strip():
+        sources.append("job_description")
 
     provider = get_llm_provider()
     draft, llm_error = await _generate_draft_via_llm(prompt, allowed_labels or None, provider)
@@ -452,6 +476,7 @@ async def generate_answer(
             confidence=draft.confidence,
             requires_review=True,
             source="llm",
+            sources=sources,
             policy_reason=policy_reason,
             notes=draft.notes or "Model reported insufficient context.",
             llm_raw=draft.answer,
@@ -468,6 +493,7 @@ async def generate_answer(
         confidence=draft.confidence,
         requires_review=low,
         source="llm",
+        sources=sources,
         policy_reason=policy_reason,
         fill_action=None if low else _build_fill_action(field_type, field_options, draft.answer, field_id, selector),
         notes=draft.notes,

@@ -58,6 +58,7 @@ from app.api.applications import router as applications_router
 from app.api.job_search import router as job_search_router
 from app.api.memory import router as memory_router
 from app.api.profile import router as profile_router
+from app.api.fast_apply import router as fast_apply_router
 from app.api.dashboard import router as dashboard_router
 
 api_router.include_router(agent_router)
@@ -70,6 +71,7 @@ api_router.include_router(applications_router)
 api_router.include_router(job_search_router)
 api_router.include_router(memory_router)
 api_router.include_router(profile_router)
+api_router.include_router(fast_apply_router)
 api_router.include_router(dashboard_router)
 
 app.include_router(api_router)

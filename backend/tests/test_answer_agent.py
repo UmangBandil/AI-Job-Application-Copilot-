@@ -160,7 +160,7 @@ async def _generate(db=None, provider=None, **kw):
 def test_policy_sensitive_sponsorship():
     from app.ai.agents.field_policy import AnswerPolicy, classify_question
 
-    policy, reason = classify_question("Do you require visa sponsorship?")
+    policy, reason, _confidence = classify_question("Do you require visa sponsorship?")
     assert policy is AnswerPolicy.USER_CONFIRMATION_REQUIRED
     assert "sponsorship" in reason
 
@@ -180,14 +180,14 @@ def test_policy_sensitive_sponsorship():
 def test_policy_all_sensitive_topics(q):
     from app.ai.agents.field_policy import AnswerPolicy, classify_question
 
-    policy, _ = classify_question(q)
+    policy, _, _confidence = classify_question(q)
     assert policy is AnswerPolicy.USER_CONFIRMATION_REQUIRED
 
 
 def test_policy_years_experience_is_profile_or_memory():
     from app.ai.agents.field_policy import AnswerPolicy, classify_question
 
-    policy, reason = classify_question("How many years of experience do you have?")
+    policy, reason, _confidence = classify_question("How many years of experience do you have?")
     assert policy is AnswerPolicy.PROFILE_OR_MEMORY
     assert "experience length" in reason
 
@@ -195,7 +195,7 @@ def test_policy_years_experience_is_profile_or_memory():
 def test_policy_email_is_profile_only():
     from app.ai.agents.field_policy import AnswerPolicy, classify_question
 
-    policy, reason = classify_question("What is your email address?")
+    policy, reason, _confidence = classify_question("What is your email address?")
     assert policy is AnswerPolicy.PROFILE_ONLY
     assert "email" in reason
 
@@ -203,14 +203,14 @@ def test_policy_email_is_profile_only():
 def test_policy_open_textarea_is_llm_generated():
     from app.ai.agents.field_policy import AnswerPolicy, classify_question
 
-    policy, _ = classify_question("Why do you want to work here?", field_type="textarea")
+    policy, _, _confidence = classify_question("Why do you want to work here?", field_type="textarea")
     assert policy is AnswerPolicy.LLM_GENERATED
 
 
 def test_policy_unknown_choice_is_profile_or_memory():
     from app.ai.agents.field_policy import AnswerPolicy, classify_question
 
-    policy, _ = classify_question("Preferred work style?", field_type="select")
+    policy, _, _confidence = classify_question("Preferred work style?", field_type="select")
     assert policy is AnswerPolicy.PROFILE_OR_MEMORY
 
 

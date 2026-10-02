@@ -1,11 +1,16 @@
 """Field policy engine.
 
-Classifies an application question into one of five policies BEFORE any LLM
-call. This is the server-side authority: the extension's mapper is a fast
-client-side pre-filter, but this module decides what the answer engine may
-actually do. Sensitive topics always map to USER_CONFIRMATION_REQUIRED —
-the LLM is never asked and memory is never auto-applied to them, no matter
-what the client claims.
+Classifies an application question into one of six policies BEFORE any LLM
+call, with a classification confidence. This is the server-side authority:
+the extension's mapper is a fast client-side pre-filter, but this module
+decides what the answer engine may actually do. Sensitive topics always map
+to USER_CONFIRMATION_REQUIRED — the LLM is never asked and memory is never
+auto-applied to them, no matter what the client claims.
+
+Confidence expresses certainty about the *policy*, not the answer:
+regex profile/sensitive matches are near-certain (0.95–1.0), heuristic
+buckets (choice fields, open text) sit in the 0.75–0.90 band, and anything
+with no usable text is UNKNOWN (0.0) so it can never be auto-filled.
 """
 
 import re
@@ -18,6 +23,7 @@ class AnswerPolicy(str, Enum):
     RESUME_REQUIRED = "resume_required"                # answerable only from resume facts
     LLM_GENERATED = "llm_generated"                    # grounded generation allowed
     USER_CONFIRMATION_REQUIRED = "user_confirmation_required"  # never auto-answered
+    UNKNOWN = "unknown"                                # unclassifiable — never auto-filled
 
 
 # Server-side sensitive-topic rules. Mirrors the extension mapper's
@@ -66,32 +72,48 @@ def classify_question(
     question: str,
     field_type: str = "text",
     client_policy: str | None = None,
-) -> tuple[AnswerPolicy, str]:
-    """Map a question to its answer policy.
+) -> tuple[AnswerPolicy, str, float]:
+    """Map a question to its answer policy with a classification confidence.
 
-    Returns (policy, reason). The client's own classification is recorded
-    but never trusted for sensitive topics — the server always re-checks.
+    Returns (policy, reason, confidence). The client's own classification is
+    recorded but never trusted for sensitive topics — the server always
+    re-checks. Fields with no recognizable text classify as UNKNOWN with
+    confidence 0.0 so downstream gates can never auto-fill them.
     """
-    reason = sensitive_reason(question)
-    if reason:
-        return AnswerPolicy.USER_CONFIRMATION_REQUIRED, reason
+    q = (question or "").strip().lower()
 
-    q = (question or "").lower()
+    # Nothing to classify on — the field cannot be trusted to automation.
+    if not q or not _LETTER_RE.search(q):
+        return AnswerPolicy.UNKNOWN, "no recognizable label — cannot classify", 0.0
+
+    reason = sensitive_reason(q)
+    if reason:
+        return AnswerPolicy.USER_CONFIRMATION_REQUIRED, reason, 1.0
+
     if _YEARS_RE.search(q):
-        return AnswerPolicy.PROFILE_OR_MEMORY, "experience length (profile-or-memory)"
+        return AnswerPolicy.PROFILE_OR_MEMORY, "experience length (profile-or-memory)", 0.90
 
     for profile_key, pattern in _PROFILE_PATTERNS:
         if pattern.search(q):
-            return AnswerPolicy.PROFILE_ONLY, f"profile field '{profile_key}'"
+            return AnswerPolicy.PROFILE_ONLY, f"profile field '{profile_key}'", 0.95
 
     is_choice = field_type in ("select", "checkbox", "radio")
     is_long_text = field_type == "textarea"
     if is_choice:
-        return AnswerPolicy.PROFILE_OR_MEMORY, "choice field — check saved answers"
+        return AnswerPolicy.PROFILE_OR_MEMORY, "choice field — check saved answers", 0.85
     if is_long_text or _QUESTION_RE.search(q):
-        return AnswerPolicy.LLM_GENERATED, "free-text / open question"
+        return AnswerPolicy.LLM_GENERATED, "free-text / open question", 0.90
 
-    return AnswerPolicy.LLM_GENERATED, "general question"
+    return AnswerPolicy.LLM_GENERATED, "general question", 0.75
+
+
+def match_profile_key(question: str) -> str | None:
+    """Which profile field does this question map to (None = none)?"""
+    q = (question or "").lower()
+    for profile_key, pattern in _PROFILE_PATTERNS:
+        if pattern.search(q):
+            return profile_key
+    return None
 
 
 def client_policy_matches(server_policy: AnswerPolicy, client_policy: str | None) -> bool:
@@ -107,5 +129,6 @@ def client_policy_matches(server_policy: AnswerPolicy, client_policy: str | None
         AnswerPolicy.RESUME_REQUIRED: {"ai", "memory"},
         AnswerPolicy.LLM_GENERATED: {"ai", "memory", "unknown"},
         AnswerPolicy.USER_CONFIRMATION_REQUIRED: {"review"},
+        AnswerPolicy.UNKNOWN: {"unknown"},
     }
     return client_policy in mapping.get(server_policy, set())
